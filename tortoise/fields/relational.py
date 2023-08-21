@@ -168,7 +168,10 @@ class ManyToManyRelation(ReverseRelation[MODEL]):
         db = using_db if using_db else self.remote_model._meta.db
         pk_formatting_func = type(self.instance)._meta.pk.to_db_value
         related_pk_formatting_func = type(instances[0])._meta.pk.to_db_value
-        through_table = Table(self.field.through)
+        through_table = Table(
+            schema=self.instance._meta.schema if self.instance._meta.schema is not None else None,
+            name=self.field.through,
+        )
         select_query = (
             db.query_class.from_(through_table)
             .where(

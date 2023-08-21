@@ -951,6 +951,87 @@ COMMENT ON TABLE "teamevents" IS 'How participants relate';
 """.strip(),
         )
 
+    async def test_non_public_schema(self):
+        self.maxDiff = None
+        await self.init_for("tests.schema.models_non_public_schema_create")
+        sql = get_schema_sql(connections.get("default"), safe=False)
+        self.assertEqual(
+            r"""
+CREATE SCHEMA "non_public";
+CREATE TABLE "non_public"."non_public_schema_model" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL
+);
+    """.strip(),
+            sql.strip(),
+        )
+
+    async def test_non_public_schema_safe(self):
+        self.maxDiff = None
+        await self.init_for("tests.schema.models_non_public_schema_create")
+        sql = get_schema_sql(connections.get("default"), safe=True)
+        self.assertEqual(
+            r"""
+CREATE SCHEMA IF NOT EXISTS "non_public";
+CREATE TABLE IF NOT EXISTS "non_public"."non_public_schema_model" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL
+);
+    """.strip(),
+            sql.strip(),
+        )
+
+    async def test_non_public_schema_m2m(self):
+        self.maxDiff = None
+        await self.init_for("tests.testmodels_postgres")
+        sql = get_schema_sql(connections.get("default"), safe=False)
+        self.assertEqual(
+            r"""CREATE SCHEMA "test_schema";
+CREATE TABLE "arrayfields" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "array" int[] NOT NULL,
+    "array_null" int[]
+);
+CREATE TABLE "test_schema"."reporter" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL
+);
+CREATE TABLE "test_schema"."team" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "alias" INT
+);
+CREATE INDEX "idx_team_alias_56754f" ON "test_schema"."team" ("alias", "name");
+CREATE INDEX "idx_team_id_61645c" ON "test_schema"."team" ("id", "name");
+CREATE TABLE "test_schema"."tournament" (
+    "id" SMALLSERIAL NOT NULL PRIMARY KEY,
+    "name" VARCHAR(255) NOT NULL,
+    "desc" TEXT,
+    "created" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX "idx_tournament_created_147789" ON "test_schema"."tournament" ("created");
+COMMENT ON TABLE "test_schema"."tournament" IS 'What Tournaments */''`/* we have';
+CREATE TABLE "test_schema"."event" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "modified" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "token" VARCHAR(100) NOT NULL UNIQUE,
+    "alias" INT,
+    "reporter_id" INT REFERENCES "test_schema"."reporter" ("id") ON DELETE CASCADE,
+    "tournament_id" SMALLINT NOT NULL REFERENCES "test_schema"."tournament" ("id") ON DELETE CASCADE,
+    CONSTRAINT "uid_event_name_c9ffba" UNIQUE ("name", "token"),
+    CONSTRAINT "uid_event_tournam_64e563" UNIQUE ("tournament_id", "id")
+);
+COMMENT ON COLUMN "test_schema"."event"."token" IS 'Unique token';
+COMMENT ON TABLE "test_schema"."event" IS 'This table contains a list of all the events';
+CREATE TABLE "test_schema"."event_team" (
+    "event_id" INT NOT NULL REFERENCES "test_schema"."event" ("id") ON DELETE SET NULL,
+    "team_id" INT NOT NULL REFERENCES "test_schema"."team" ("id") ON DELETE SET NULL
+);
+COMMENT ON TABLE "test_schema"."event_team" IS 'How participants relate';""".strip(),
+            sql.strip(),
+        )
+
     async def test_schema_safe(self):
         self.maxDiff = None
         await self.init_for("tests.schema.models_schema_create")
@@ -1106,7 +1187,6 @@ CREATE INDEX IF NOT EXISTS "idx_index_partial_c5be6a" ON "index" USING  ("partia
         await self.init_for("tests.schema.models_no_auto_create_m2m")
         sql = get_schema_sql(connections.get("default"), safe=False)
         self.assertEqual(
-            sql.strip(),
             r"""CREATE TABLE "team" (
     "name" VARCHAR(50) NOT NULL  PRIMARY KEY,
     "key" INT NOT NULL,
@@ -1152,6 +1232,7 @@ CREATE TABLE "team_team" (
     "team_rel_id" VARCHAR(50) NOT NULL REFERENCES "team" ("name") ON DELETE CASCADE,
     "team_id" VARCHAR(50) NOT NULL REFERENCES "team" ("name") ON DELETE CASCADE
 );""".strip(),
+            sql.strip(),
         )
 
 

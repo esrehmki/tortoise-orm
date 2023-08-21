@@ -314,11 +314,32 @@ class M2MOne(Model):
     )
 
 
+class M2MOneNonPublicSchema(Model):
+    id = fields.IntField(pk=True)
+    name = fields.CharField(max_length=255, null=True)
+    two: fields.ManyToManyRelation["M2MTwoNonPublicSchema"] = fields.ManyToManyField(
+        "models.M2MTwoNonPublicSchema", related_name="one"
+    )
+
+    class Meta:
+        schema = "public"
+
+
 class M2MTwo(Model):
     id = fields.IntField(pk=True)
     name = fields.CharField(max_length=255, null=True)
 
     one: fields.ManyToManyRelation[M2MOne]
+
+
+class M2MTwoNonPublicSchema(Model):
+    id = fields.IntField(pk=True)
+    name = fields.CharField(max_length=255, null=True)
+
+    one: fields.ManyToManyRelation[M2MOneNonPublicSchema]
+
+    class Meta:
+        schema = "public"
 
 
 class NoID(Model):

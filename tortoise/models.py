@@ -1508,3 +1508,7 @@ class Model(metaclass=ModelMeta):
                     table="custom_table"
                     unique_together=(("field_a", "field_b"), )
         """
+
+    @property
+    def meta(self):
+        return self._meta
