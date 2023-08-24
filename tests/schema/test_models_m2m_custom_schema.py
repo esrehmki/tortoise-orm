@@ -58,3 +58,6 @@ class TestCustomSchema(test.IsolatedTestCase):
         actual_team: testmodels.Team = await testmodels.Team.get(id=1)
 
         await actual_event.participants.add(actual_team)
+
+        async for participant in actual_event.participants:
+            self.assertEqual("TE", participant.name)
