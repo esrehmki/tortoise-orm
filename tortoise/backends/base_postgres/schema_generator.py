@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, List, Set, Type, cast
 
-import tortoise.models
+from pypika import Table
 from tortoise.fields import JSONField, TextField, UUIDField
 from tortoise.indexes import Index
 
@@ -307,14 +307,11 @@ class BasePostgresSchemaGenerator(BaseSchemaGenerator):
             if field_object._generated or field_object.through in models_tables:
                 continue
 
-            m2m_table_name: str = (
-                f'"{model._meta.schema}"."{field_object.through}"'
-                if model._meta.schema is not None
-                else f'"{field_object.through}"'
-            )
+            through_table: str = str(Table(name=field_object.through, schema=model._meta.schema))
+
             m2m_create_string = self.M2M_TABLE_TEMPLATE.format(
                 exists=self.IF_NOT_EXISTS if safe else "",
-                table_name=m2m_table_name,
+                table_name=through_table,
                 backward_fk=self._create_fk_string(
                     constraint_name="",
                     db_column=field_object.backward_key,
@@ -343,9 +340,9 @@ class BasePostgresSchemaGenerator(BaseSchemaGenerator):
                 forward_type=field_object.related_model._meta.pk.get_for_dialect(
                     self.DIALECT, "SQL_TYPE"
                 ),
-                extra=self._table_generate_extra(table=m2m_table_name),
+                extra=self._table_generate_extra(table=through_table),
                 comment=self._table_comment_generator(
-                    table_name=m2m_table_name,
+                    table_name=through_table,
                     comment=field_object.description,
                 )
                 if field_object.description

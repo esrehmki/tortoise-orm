@@ -428,7 +428,9 @@ class BaseExecutor:
 
         field_object: ManyToManyFieldInstance = self.model._meta.fields_map[field]  # type: ignore
 
-        through_table = Table(field_object.through)
+        through_table = Table(
+            name=field_object.through, schema=field_object.related_model._meta.schema
+        )
 
         subquery = (
             self.db.query_class.from_(through_table)

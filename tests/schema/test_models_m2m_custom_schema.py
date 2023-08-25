@@ -61,3 +61,6 @@ class TestCustomSchema(test.IsolatedTestCase):
 
         async for participant in actual_event.participants:
             self.assertEqual("TE", participant.name)
+
+        ret_val = await testmodels.Event.filter(participants__id=1).first()
+        pass

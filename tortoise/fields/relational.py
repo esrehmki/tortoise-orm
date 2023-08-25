@@ -169,8 +169,8 @@ class ManyToManyRelation(ReverseRelation[MODEL]):
         pk_formatting_func = type(self.instance)._meta.pk.to_db_value
         related_pk_formatting_func = type(instances[0])._meta.pk.to_db_value
         through_table = Table(
-            schema=self.instance._meta.schema if self.instance._meta.schema is not None else None,
             name=self.field.through,
+            schema=self.instance._meta.schema if self.instance._meta.schema is not None else None,
         )
         select_query = (
             db.query_class.from_(through_table)
@@ -225,7 +225,7 @@ class ManyToManyRelation(ReverseRelation[MODEL]):
         Clears ALL relations.
         """
         db = using_db if using_db else self.remote_model._meta.db
-        through_table = Table(self.field.through)
+        through_table = Table(name=self.field.through, schema=self.remote_model._meta.schema)
         pk_formatting_func = type(self.instance)._meta.pk.to_db_value
         query = (
             db.query_class.from_(through_table)
@@ -248,7 +248,7 @@ class ManyToManyRelation(ReverseRelation[MODEL]):
         db = using_db if using_db else self.remote_model._meta.db
         if not instances:
             raise OperationalError("remove() called on no instances")
-        through_table = Table(self.field.through)
+        through_table = Table(name=self.field.through, schema=self.remote_model._meta.schema)
         pk_formatting_func = type(self.instance)._meta.pk.to_db_value
         related_pk_formatting_func = type(instances[0])._meta.pk.to_db_value
 
